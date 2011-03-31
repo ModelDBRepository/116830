@@ -1,0 +1,5 @@
+load_file("nrngui.hoc")
+xpanel("start")
+xbutton("recreate fig 1b (about 2 1/4 minutes on 2.8 GhZ Pentium 4)", \
+"load_file(\"init.hoc\")")
+xpanel()
