@@ -42,7 +42,7 @@ Non-vector routines
 isojt    compare 2 objects to see if they're of the same type
 eqojt    compare 2 object pointers to see if they point to same thing
 sumabs   return sum of absolute values
-round    round off to nearest integer
+round_local    round off to nearest integer (_local prevents duplic. mswin name)
 ENDCOMMENT
 
 NEURON {
@@ -85,7 +85,7 @@ ASSIGNED { RES }
 VERBATIM
 #include <stdlib.h>
 #include <math.h>
-#include <values.h> /* contains MAXLONG */
+#include <limits.h> /* contains MAXLONG */
 #include <sys/time.h> 
 extern double* hoc_pgetarg();
 extern double hoc_call_func(Symbol*, int narg);
@@ -1313,7 +1313,7 @@ ENDVERBATIM
 
 :* v1.round() rounds off to nearest integer
 VERBATIM
-static double round(void* vv) {
+static double round_local(void* vv) {
   int i, n;
   double *x;
   n = vector_instance_px(vv, &x);
@@ -1433,7 +1433,7 @@ VERBATIM
   install_vector_method("sw", sw);
   install_vector_method("ismono", ismono);
   install_vector_method("count", count);
-  install_vector_method("round", round);
+  install_vector_method("round", round_local);
   install_vector_method("fewind", fewind);
   install_vector_method("findx", findx);
   install_vector_method("sindx", sindx);
