@@ -31,7 +31,7 @@ ASSIGNED { }
 VERBATIM
 #include <stdlib.h>
 #include <math.h>
-#include <values.h> /* contains MAXLONG */
+#include <limits.h> /* contains MAXLONG */
 #include <sys/time.h> 
 extern double BVBASE;
 extern double* hoc_pgetarg();
