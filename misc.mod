@@ -47,6 +47,9 @@ VERBATIM
 #include <time.h>
 #include <stdio.h>
 #include <limits.h>
+#ifndef NRN_VERSION_GTEQ_8_2_0
+FILE* hoc_obj_file_arg(int);
+#endif
 ENDVERBATIM
 
 :* FUNCTION file_exist()
