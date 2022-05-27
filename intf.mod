@@ -36,7 +36,7 @@ typedef struct VPT {
  unsigned int  size;
  unsigned int  p;
  double* vvo[NSV];
- void*    vv[NSV];
+ IvocVect* vv[NSV];
 } vpt;
 
 typedef struct ID0 {
@@ -64,7 +64,7 @@ static unsigned int jtpt,jitmax;
 static double vii[NSV];   // temp storage
 static unsigned int wwpt,wwsz,wwaz;   // pointer and size for the shared recording vector
 FILE *wf1, *wf2;
-void*    ww[NSW];
+IvocVect*    ww[NSW];
 double* wwo[NSW];
 float  wwt[WSZ]; float www[WSZ]; unsigned int wwi[WSZ]; char wws[WSZ];
 ENDVERBATIM
@@ -154,7 +154,7 @@ CONSTRUCTOR {
   { int lid,lty;
     if (ifarg(2)) { lid=(int) *getarg(2); } else { lid= UINT_MAX; }
     if (ifarg(3)) { lty=(int) *getarg(3); } else { lty= -1; }
-    _p_sop = (void*)ecalloc(1, sizeof(id0));
+    _p_sop = (double*)ecalloc(1, sizeof(id0));
     ip = IDP;
     ip->id=lid; ip->type=lty; 
     ip->invl0 = ip->record = ip->jitter = ip->input = 0; // all flags off
@@ -361,7 +361,7 @@ PROCEDURE randspk () {
 
 :** val(t,tstart) fills global vii[] to pass values back to record() (called from record())
 VERBATIM
-double val (double xx, double ta) { 
+void val (double xx, double ta) { 
   vii[1]=VAM*EXP(-(xx - ta)/tauAM);
   vii[2]=VNM*EXP(-(xx - ta)/tauNM);
   vii[3]=VGA*EXP(-(xx - ta)/tauGA);
@@ -376,11 +376,11 @@ PROCEDURE record () {
   VERBATIM {
   int k; double ti;
   vp = SOP;
-  if (tg>=t) return;
-  if (vp->p >= vp->size) { if (errflag) return; 
+  if (tg>=t) return 0;
+  if (vp->p >= vp->size) { if (errflag) return 0; 
     printf("**** WARNING out of recording room for INTF type%d id%d at %g****\n",IDP->type,IDP->id,t);
     printf("**************** WARNING: No further WARNINGS ****************\n");
-    errflag=1; return; }
+    errflag=1; return 0; }
   for (ti=tg;ti<=t && vp->p < vp->size;ti+=vdt,vp->p++) { 
     val(ti,tg);  
     vp->vvo[0][vp->p]=ti;
@@ -398,7 +398,7 @@ PROCEDURE recspk (x) {
   VERBATIM { int k;
   vp = SOP;
   record();
-  if (vp->p >= vp->size || vp->vvo[6]==0) return; 
+  if (vp->p >= vp->size || vp->vvo[6]==0) return 0; 
   vp->vvo[0][vp->p-1]=_lx;
   vp->vvo[6][vp->p-1]=spkht; // the spike
   tg=_lx;
@@ -575,13 +575,13 @@ PROCEDURE chk () {
     if (SOP!=nil) {
       vp = SOP;
       printf("p %d size %d tg %g\n",vp->p,vp->size,tg);
-      for (i=0;i<NSV;i++) printf("%d %x %x;",i,vp->vv[i],vp->vvo[i]);
+      for (i=0;i<NSV;i++) printf("%d %p %p;",i,vp->vv[i],vp->vvo[i]);
     } else printf("Recording pointers not initialized");
   }
   if (lfg==2) { 
     printf("Global vectors for input and jitter: \n");
-    if (vsp!=nil) printf("VSP: %x (%d/%d-%d)\n",vsp,ip->rvi,ip->rvb,ip->rve); else printf("no VSP\n");
-    if (jsp!=nil) printf("JSP: %x (%d/%d)\n",jsp,jtpt,jitmax); else printf("no JSP\n");
+    if (vsp!=nil) printf("VSP: %p (%d/%d-%d)\n",vsp,ip->rvi,ip->rvb,ip->rve); else printf("no VSP\n");
+    if (jsp!=nil) printf("JSP: %p (%d/%d)\n",jsp,jtpt,jitmax); else printf("no JSP\n");
   }
   if (lfg==3) { 
     if (vsp!=nil) { printf("VSP: (%d/%d-%d)\n",ip->rvi,ip->rvb,ip->rve); 
@@ -593,7 +593,7 @@ PROCEDURE chk () {
   }
   if (lfg==5) { 
     printf("wwpt %d wwsz %d\n WW vecs: ",wwpt,wwsz);
-    for (i=0;i<NSW;i++) printf("%d %x %x;",i,ww[i],wwo[i]);
+    for (i=0;i<NSW;i++) printf("%d %p %p;",i,ww[i],wwo[i]);
   }}
   ENDVERBATIM
 }
@@ -773,7 +773,7 @@ PROCEDURE wrecord (t,s0,w0) {
   int k; double id = (double)IDP->id;
   if (wwpt >= wwsz) { 
     wwpt=0;
-    fprintf(wf1,"//b8 %d INTF %g %d\n",WSZ,_lt,ftell(wf2));
+    fprintf(wf1,"//b8 %d INTF %g %ld\n",WSZ,_lt,ftell(wf2));
     fwrite(&wwt,sizeof(float),WSZ,wf2);  // write out the size
     fwrite(&wwi,sizeof(int),WSZ,wf2);  // write out the size
     fwrite(&wws,sizeof(char),WSZ,wf2);  // write out the size
@@ -845,12 +845,12 @@ PROCEDURE global_fini () {
     if (wwo[0]!=0) { 
       for (k=0;k<NSW;k++) vector_resize(ww[k], wwpt);
     } else {
-      fprintf(wf1,"//b8 %d INTF %g %d\n",wwpt,t,ftell(wf2));
+      fprintf(wf1,"//b8 %d INTF %g %ld\n",wwpt,t,ftell(wf2));
       fwrite(&wwt,sizeof(float),wwpt,wf2);  // write out the size
       fwrite(&wwi,sizeof(int),wwpt,wf2);  // write out the size
       fwrite(&wws,sizeof(char),wwpt,wf2);  // write out the size
       fwrite(&www,sizeof(float),wwpt,wf2);  // write out the size
-      printf("Closing file with wwpt=%d at location %d\n",wwpt,ftell(wf2));
+      printf("Closing file with wwpt=%d at location %ld\n",wwpt,ftell(wf2));
       fclose(wf1); fclose(wf2);
     }
   } else {

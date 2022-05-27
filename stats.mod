@@ -333,8 +333,8 @@ static double bin(void* vv) {
   invl = (int)*getarg(2);
 
   vv=vector_arg(1);
-  maxsz=vector_buffer_size(vv);
-  vector_resize(vv, maxsz);
+  maxsz=vector_buffer_size((IvocVect*)vv);
+  vector_resize((IvocVect*)vv, maxsz);
   if (x[nx-1]/invl>(double)(maxsz-1)) {
     printf("Need size %d in target vector (%d)\n",(int)(x[nx-1]/invl+1),maxsz); 
     hoc_execerror("",0); }
@@ -345,7 +345,7 @@ static double bin(void* vv) {
       y[j]++;
     }
   }
-  vector_resize(vv, j);
+  vector_resize((IvocVect*)vv, j);
   return (double)j;
 }
 ENDVERBATIM
